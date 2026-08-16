@@ -104,6 +104,21 @@ select.filter-select{
   background:var(--card);font-size:13px;color:var(--text);font-family:var(--sans);
   min-width:170px;
 }
+.date-filter-wrap{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--card);
+}
+.date-filter-wrap label{font-size:12px;color:var(--text-muted);white-space:nowrap;padding-right:2px;}
+.date-input{
+  border:1px solid var(--border);border-radius:6px;padding:6px 7px;font-size:12.5px;
+  color:var(--text);font-family:var(--sans);background:var(--card);
+}
+.date-sep{color:var(--text-muted);font-size:12px;}
+.date-clear-btn{
+  border:none;background:transparent;color:var(--text-muted);cursor:pointer;
+  font-size:13px;padding:2px 4px;border-radius:5px;
+}
+.date-clear-btn:hover{background:#f0f1f4;color:var(--text);}
 .btn-print{
   background:var(--navy-900);color:#fff;border:1px solid var(--navy-900);
   padding:10px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
@@ -198,6 +213,11 @@ thead th{
   letter-spacing:.35px;text-transform:uppercase;border-bottom:1px solid #000;
   white-space:nowrap;
 }
+thead th.sortable{cursor:pointer;user-select:none;}
+thead th.sortable:hover{background:#1c2c48;}
+.sort-arrows{display:inline-flex;flex-direction:column;vertical-align:middle;margin-left:3px;line-height:1;}
+.sort-arrows .arrow{display:block;font-size:8px;opacity:.35;letter-spacing:0;}
+.sort-arrows .arrow.active{opacity:1;color:#ffd28a;}
 tbody td{
   padding:10px 14px;border-bottom:1px solid var(--border-soft);vertical-align:middle;
   color:var(--text);white-space:nowrap;
@@ -331,9 +351,15 @@ tbody tr:nth-child(even):hover{background:#f4f7fb;}
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input id="searchInput" type="text" placeholder="Buscar por tablero, calle, responsable, clasificación...">
   </div>
-  <select id="respFilter" class="filter-select"><option value="">Responsable (todos)</option></select>
   <select id="clasFilter" class="filter-select"><option value="">Clasificación (todas)</option></select>
   <select id="tipoFilter" class="filter-select"><option value="">Ubicación (todas)</option></select>
+  <div class="date-filter-wrap">
+    <label for="dateFrom">Últ. inspección</label>
+    <input id="dateFrom" type="date" class="date-input" title="Desde">
+    <span class="date-sep">–</span>
+    <input id="dateTo" type="date" class="date-input" title="Hasta">
+    <button id="dateClearBtn" class="date-clear-btn" title="Limpiar filtro de fecha">✕</button>
+  </div>
   <button id="printBtn" class="btn-print" title="Imprimir el listado filtrado, paginado para impresión">🖨️ Imprimir listado</button>
   <div class="legend">
     <span><i class="dot ok"></i> Listo para PDF</span>
@@ -346,15 +372,15 @@ tbody tr:nth-child(even):hover{background:#f4f7fb;}
     <table>
       <thead>
         <tr>
-          <th>Tablero</th>
-          <th>Calle</th>
+          <th class="sortable" data-sort="nombre">Tablero <span class="sort-arrows" data-col="nombre"></span></th>
+          <th class="sortable" data-sort="calle">Calle <span class="sort-arrows" data-col="calle"></span></th>
           <th>Altura</th>
           <th>Responsable</th>
           <th>Clasificación</th>
           <th>Cierre puerta</th>
           <th>ID</th>
           <th>Circuito PAT</th>
-          <th>Última inspección</th>
+          <th class="sortable" data-sort="ultimaInspeccion">Última inspección <span class="sort-arrows" data-col="ultimaInspeccion"></span></th>
           <th>Plano</th>
           <th>Foto externa</th>
           <th>Foto interna</th>
@@ -418,6 +444,7 @@ const STATIC_SNAPSHOT_DATE = '16/08/2026';
 
 /* ================= Data ================= */
 let DATA = []; // se completa con normalizeAndFilter() al cargar
+let DATA_BY_ID = {}; // indexado por número de tablero (r.nombre), para no depender de posiciones
 
 function driveIdFromUrl(url){
   if(!url) return null;
@@ -516,6 +543,8 @@ let page = 1;
 const PAGE_SIZE = 50;
 let lbImages = [];
 let lbIndex = 0;
+let sortCol = null;   // 'nombre' | 'calle' | 'ultimaInspeccion' | null
+let sortDir = 'asc';  // 'asc' | 'desc'
 
 /* ================= Elements ================= */
 const tbody = document.getElementById('tbody');
@@ -525,22 +554,20 @@ const pageLabel = document.getElementById('pageLabel');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 const searchInput = document.getElementById('searchInput');
-const respFilter = document.getElementById('respFilter');
 const clasFilter = document.getElementById('clasFilter');
 const tipoFilter = document.getElementById('tipoFilter');
+const dateFromInput = document.getElementById('dateFrom');
+const dateToInput = document.getElementById('dateTo');
+const dateClearBtn = document.getElementById('dateClearBtn');
 
 /* ================= Populate filter dropdowns ================= */
 function uniqueSorted(key){
   return [...new Set(DATA.map(d=>d[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es'));
 }
 function populateFilterDropdowns(){
-  const prevResp = respFilter.value, prevClas = clasFilter.value, prevTipo = tipoFilter.value;
-  respFilter.innerHTML = '<option value="">Responsable (todos)</option>';
+  const prevClas = clasFilter.value, prevTipo = tipoFilter.value;
   clasFilter.innerHTML = '<option value="">Clasificación (todas)</option>';
   tipoFilter.innerHTML = '<option value="">Ubicación (todas)</option>';
-  uniqueSorted('responsable').forEach(v=>{
-    const o=document.createElement('option'); o.value=v; o.textContent=v; respFilter.appendChild(o);
-  });
   uniqueSorted('clasificacion').forEach(v=>{
     const o=document.createElement('option'); o.value=v; o.textContent=v; clasFilter.appendChild(o);
   });
@@ -548,7 +575,6 @@ function populateFilterDropdowns(){
     const o=document.createElement('option'); o.value=v; o.textContent=v; tipoFilter.appendChild(o);
   });
   // conservar seleccion previa si la opcion todavia existe
-  if([...respFilter.options].some(o=>o.value===prevResp)) respFilter.value = prevResp;
   if([...clasFilter.options].some(o=>o.value===prevClas)) clasFilter.value = prevClas;
   if([...tipoFilter.options].some(o=>o.value===prevTipo)) tipoFilter.value = prevTipo;
 }
@@ -575,15 +601,30 @@ function fullAddress(r){
 }
 
 /* ================= Filtering ================= */
+// Convierte "dd/mm/yyyy" a Date (o null si no es válido)
+function parseDdMmYyyy(s){
+  if(!s) return null;
+  const m = String(s).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!m) return null;
+  return new Date(Number(m[3]), Number(m[2])-1, Number(m[1]));
+}
+
 function applyFilters(){
   const q = searchInput.value.trim().toLowerCase();
-  const resp = respFilter.value;
   const clas = clasFilter.value;
   const tipo = tipoFilter.value;
+  const dateFrom = dateFromInput.value ? new Date(dateFromInput.value + 'T00:00:00') : null;
+  const dateTo = dateToInput.value ? new Date(dateToInput.value + 'T23:59:59') : null;
+
   filtered = DATA.filter(r=>{
-    if(resp && r.responsable !== resp) return false;
     if(clas && r.clasificacion !== clas) return false;
     if(tipo && r.tipoUbic !== tipo) return false;
+    if(dateFrom || dateTo){
+      const d = parseDdMmYyyy(r.ultimaInspeccion);
+      if(!d) return false; // sin fecha válida, no entra en un filtro de rango de fechas
+      if(dateFrom && d < dateFrom) return false;
+      if(dateTo && d > dateTo) return false;
+    }
     if(q){
       const hay = [r.nombre, r.calle, r.responsable, r.clasificacion, r.tipoUbic, r.altura]
         .map(x=>String(x??'').toLowerCase()).join(' | ');
@@ -591,8 +632,40 @@ function applyFilters(){
     }
     return true;
   });
+
+  if(sortCol){
+    filtered.sort((a,b)=>{
+      let va, vb;
+      if(sortCol === 'ultimaInspeccion'){
+        va = parseDdMmYyyy(a.ultimaInspeccion); vb = parseDdMmYyyy(b.ultimaInspeccion);
+        va = va ? va.getTime() : -Infinity; vb = vb ? vb.getTime() : -Infinity;
+      } else if(sortCol === 'nombre'){
+        va = Number(a.nombre); vb = Number(b.nombre);
+        if(isNaN(va)) va = String(a.nombre||'');
+        if(isNaN(vb)) vb = String(b.nombre||'');
+      } else {
+        va = String(a[sortCol]||'').toLowerCase(); vb = String(b[sortCol]||'').toLowerCase();
+      }
+      let cmp;
+      if(typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+      else cmp = String(va).localeCompare(String(vb), 'es');
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+
   page = 1;
   render();
+  updateSortArrowsUI();
+}
+
+function updateSortArrowsUI(){
+  document.querySelectorAll('.sort-arrows').forEach(el=>{
+    const col = el.getAttribute('data-col');
+    const isActive = sortCol === col;
+    el.innerHTML = `
+      <span class="arrow ${isActive && sortDir==='asc' ? 'active' : ''}">▲</span>
+      <span class="arrow ${isActive && sortDir==='desc' ? 'active' : ''}">▼</span>`;
+  });
 }
 
 /* ================= Render ================= */
@@ -607,7 +680,7 @@ function render(){
     emptyState.style.display = 'block';
   } else {
     emptyState.style.display = 'none';
-    tbody.innerHTML = pageItems.map((r,i)=>rowHtml(r, start+i)).join('');
+    tbody.innerHTML = pageItems.map(r=>rowHtml(r)).join('');
   }
   pageLabel.textContent = `Página ${page} de ${totalPages}`;
   document.getElementById('footerPage').textContent = `Página ${page} / ${totalPages}`;
@@ -615,13 +688,14 @@ function render(){
   nextBtn.disabled = page>=totalPages;
 }
 
-function thumbOrEmpty(urls, dataIndex, imgKey, label){
+function thumbOrEmpty(urls, dataId, imgKey, label){
   if(!urls || !urls.length) return '<div class="thumb-empty">–</div>';
   const encoded = esc(JSON.stringify(urls));
+  const idAttr = esc(JSON.stringify(String(dataId)));
   return `<img class="thumb" loading="lazy" src="${esc(urls[0])}" alt="${esc(label)}"
     data-candidates='${encoded}' data-try="0"
     onerror="tryNextThumbSrc(this)"
-    onclick="openLightboxFor(${dataIndex}, '${imgKey}')" data-key="${imgKey}">`;
+    onclick="openLightboxFor(${idAttr}, '${imgKey}')" data-key="${imgKey}">`;
 }
 function tryNextThumbSrc(img){
   const candidates = JSON.parse(img.getAttribute('data-candidates') || '[]');
@@ -634,10 +708,11 @@ function tryNextThumbSrc(img){
   }
 }
 
-function rowHtml(r, idx){
+function rowHtml(r){
   const complete = !!((r.fotoExtImgs && r.fotoExtImgs.length) && (r.fotoIntImgs && r.fotoIntImgs.length));
+  const idAttr = esc(JSON.stringify(String(r.nombre)));
   const actions = complete
-    ? `<button class="btn-pdf" onclick="generatePdf(${idx}, this)">⬇ Generar PDF</button>`
+    ? `<button class="btn-pdf" onclick="generatePdf(${idAttr}, this)">⬇ Generar PDF</button>`
     : `<span class="faltan">Faltan fotos</span>`;
   return `
   <tr>
@@ -653,9 +728,9 @@ function rowHtml(r, idx){
     <td>${chip(r.id_)}</td>
     <td>${chip(r.circuitoPat)}</td>
     <td>${dash(r.ultimaInspeccion)}</td>
-    <td>${thumbOrEmpty(r.planoImgs, idx, 'plano', 'Plano tablero '+r.nombre)}</td>
-    <td>${thumbOrEmpty(r.fotoExtImgs, idx, 'ext', 'Foto externa tablero '+r.nombre)}</td>
-    <td>${thumbOrEmpty(r.fotoIntImgs, idx, 'int', 'Foto interna tablero '+r.nombre)}</td>
+    <td>${thumbOrEmpty(r.planoImgs, r.nombre, 'plano', 'Plano tablero '+r.nombre)}</td>
+    <td>${thumbOrEmpty(r.fotoExtImgs, r.nombre, 'ext', 'Foto externa tablero '+r.nombre)}</td>
+    <td>${thumbOrEmpty(r.fotoIntImgs, r.nombre, 'int', 'Foto interna tablero '+r.nombre)}</td>
     <td>${actions}</td>
   </tr>`;
 }
@@ -666,9 +741,27 @@ searchInput.addEventListener('input', ()=>{
   clearTimeout(searchTimer);
   searchTimer = setTimeout(applyFilters, 180);
 });
-respFilter.addEventListener('change', applyFilters);
 clasFilter.addEventListener('change', applyFilters);
 tipoFilter.addEventListener('change', applyFilters);
+dateFromInput.addEventListener('change', applyFilters);
+dateToInput.addEventListener('change', applyFilters);
+dateClearBtn.addEventListener('click', ()=>{
+  dateFromInput.value = '';
+  dateToInput.value = '';
+  applyFilters();
+});
+document.querySelectorAll('thead th.sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const col = th.getAttribute('data-sort');
+    if(sortCol === col){
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = col;
+      sortDir = 'asc';
+    }
+    applyFilters();
+  });
+});
 prevBtn.addEventListener('click', ()=>{ if(page>1){ page--; render(); window.scrollTo({top:0,behavior:'smooth'});} });
 nextBtn.addEventListener('click', ()=>{
   const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
@@ -682,8 +775,9 @@ const lbCaption = document.getElementById('lbCaption');
 const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
 
-function openLightboxFor(dataIndex, startKey){
-  const r = DATA[dataIndex];
+function openLightboxFor(dataId, startKey){
+  const r = DATA_BY_ID[String(dataId)];
+  if(!r) return;
   lbImages = [];
   if(r.fotoExtImgs && r.fotoExtImgs.length) lbImages.push({urls:r.fotoExtImgs, label:'Foto externa', key:'ext'});
   if(r.fotoIntImgs && r.fotoIntImgs.length) lbImages.push({urls:r.fotoIntImgs, label:'Foto interna', key:'int'});
@@ -773,8 +867,9 @@ async function loadImageData(urls){
   return null;
 }
 
-async function generatePdf(dataIndex, btnEl){
-  const r = DATA[dataIndex];
+async function generatePdf(dataId, btnEl){
+  const r = DATA_BY_ID[String(dataId)];
+  if(!r){ showToast('No se encontró el tablero.'); return; }
   const originalLabel = btnEl.innerHTML;
   btnEl.disabled = true;
   btnEl.innerHTML = '⏳ Generando…';
@@ -816,32 +911,27 @@ async function generatePdf(dataIndex, btnEl){
     y = drawDetailsTable(doc, margin, y, pageW - margin*2, fields);
     y += 22;
 
-    // ---- Images: Foto externa / Foto interna, apiladas ocupando el resto de la página ----
+    // ---- Images: Foto externa / Foto interna, lado a lado ocupando todo el ancho ----
     const [extImg, intImg] = await Promise.all([
       loadImageData(r.fotoExtImgs),
       loadImageData(r.fotoIntImgs)
     ]);
 
-    const imgBoxW = pageW - margin*2;
+    const gapBetween = 20;
+    const colW = (pageW - margin*2 - gapBetween) / 2;
     const captionH = 16;
-    const gapBetween = 16;
-    const availH = pageH - margin - y;
-    const imgBoxH = Math.max(120, (availH - captionH*2 - gapBetween) / 2);
+    const availH = pageH - margin - y - captionH;
+    const imgBoxH = Math.max(160, availH);
 
     doc.setFont('helvetica','bold');
     doc.setFontSize(10.5);
     doc.setTextColor(18,32,54);
     doc.text('Foto externa', margin, y + 11);
+    doc.text('Foto interna', margin + colW + gapBetween, y + 11);
     y += captionH;
-    drawPhotoBox(doc, margin, y, imgBoxW, imgBoxH, extImg, 'Foto externa');
-    y += imgBoxH + gapBetween;
 
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(18,32,54);
-    doc.text('Foto interna', margin, y + 11);
-    y += captionH;
-    drawPhotoBox(doc, margin, y, imgBoxW, imgBoxH, intImg, 'Foto interna');
+    drawPhotoBox(doc, margin, y, colW, imgBoxH, extImg, 'Foto externa');
+    drawPhotoBox(doc, margin + colW + gapBetween, y, colW, imgBoxH, intImg, 'Foto interna');
     y += imgBoxH;
 
     // ---- Plano page ----
@@ -958,6 +1048,8 @@ function setSyncStatus(mode, text){
 function applyDataset(records, opts){
   opts = opts || {};
   DATA = filterInspected(records);
+  DATA_BY_ID = {};
+  DATA.forEach(r => { DATA_BY_ID[String(r.nombre)] = r; });
   populateFilterDropdowns();
   applyFilters(); // recalcula filtered + render()
   if(!opts.silent) showToast(opts.toastMsg || `Datos actualizados: ${DATA.length} tableros con inspección.`);
