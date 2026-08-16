@@ -49,13 +49,16 @@ body{
   z-index:40;
 }
 .brand{display:flex;align-items:center;gap:14px;}
-.brand-mark{
-  width:40px;height:40px;border-radius:8px;
-  background:radial-gradient(circle at 30% 30%, #2a4270, #0d1826);
-  display:flex;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.15);
-  font-family:var(--mono);
-  font-weight:700;font-size:15px;color:#ffd28a;letter-spacing:-0.5px;
+.brand-logo-wrap{
+  background:#fff;border-radius:7px;padding:6px 10px;
+  display:flex;align-items:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.brand-logo{
+  height:26px;width:auto;display:block;
+}
+.brand-text{
+  padding-left:14px;border-left:1px solid rgba(255,255,255,.18);
 }
 .brand-text h1{
   margin:0;font-size:16px;letter-spacing:.4px;font-weight:700;
@@ -241,9 +244,9 @@ tbody tr:nth-child(even):hover{background:#f4f7fb;}
 
 <div class="topbar">
   <div class="brand">
-    <div class="brand-mark">AT</div>
+    <div class="brand-logo-wrap"><img class="brand-logo" src="data:image/png;base64,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" alt="Autotrol"></div>
     <div class="brand-text">
-      <h1>AUTOTROL &nbsp;·&nbsp; SIGA</h1>
+      <h1>SIGA</h1>
       <p>Sistema de Inspección de Gabinetes de Alumbrado</p>
     </div>
   </div>
@@ -316,6 +319,9 @@ tbody tr:nth-child(even):hover{background:#f4f7fb;}
 </script>
 
 <script>
+/* ================= Branding ================= */
+const LOGO_DATA_URI = 'data:image/png;base64,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';
+
 /* ================= Live data source (Google Sheets published CSV) ================= */
 const SHEET_ID = '1seHYNRSghq4bNg8RaVPt6pxj0tHpXJtlqqz9WCwRqik';
 const SHEET_GID = '268485048';
@@ -522,7 +528,7 @@ function thumbOrEmpty(urls, dataIndex, imgKey, label){
   return `<img class="thumb" loading="lazy" src="${esc(urls[0])}" alt="${esc(label)}"
     data-candidates='${encoded}' data-try="0"
     onerror="tryNextThumbSrc(this)"
-    onclick="openLightboxFor(${dataIndex})" data-key="${imgKey}">`;
+    onclick="openLightboxFor(${dataIndex}, '${imgKey}')" data-key="${imgKey}">`;
 }
 function tryNextThumbSrc(img){
   const candidates = JSON.parse(img.getAttribute('data-candidates') || '[]');
@@ -583,13 +589,14 @@ const lbCaption = document.getElementById('lbCaption');
 const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
 
-function openLightboxFor(dataIndex){
+function openLightboxFor(dataIndex, startKey){
   const r = DATA[dataIndex];
   lbImages = [];
-  if(r.fotoExtImgs && r.fotoExtImgs.length) lbImages.push({urls:r.fotoExtImgs, label:'Foto externa'});
-  if(r.fotoIntImgs && r.fotoIntImgs.length) lbImages.push({urls:r.fotoIntImgs, label:'Foto interna'});
-  if(r.planoImgs && r.planoImgs.length) lbImages.push({urls:r.planoImgs, label:'Plano'});
-  lbIndex = 0;
+  if(r.fotoExtImgs && r.fotoExtImgs.length) lbImages.push({urls:r.fotoExtImgs, label:'Foto externa', key:'ext'});
+  if(r.fotoIntImgs && r.fotoIntImgs.length) lbImages.push({urls:r.fotoIntImgs, label:'Foto interna', key:'int'});
+  if(r.planoImgs && r.planoImgs.length) lbImages.push({urls:r.planoImgs, label:'Plano', key:'plano'});
+  const foundIdx = lbImages.findIndex(it => it.key === startKey);
+  lbIndex = foundIdx >= 0 ? foundIdx : 0;
   lbMeta = { tablero:r.nombre, direccion: fullAddress(r) };
   showLightboxImage();
   lightbox.classList.add('open');
@@ -683,43 +690,18 @@ async function generatePdf(dataIndex, btnEl){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit:'pt', format:'a4' });
     const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
     const margin = 40;
-    let y = 40;
+    let y = margin;
 
-    // ---- Header ----
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(18);
-    doc.setTextColor(18,32,54);
-    doc.text('AUTOTROL', margin, y);
-    doc.setFontSize(9);
-    doc.setFont('helvetica','normal');
-    doc.setTextColor(105,112,134);
-    doc.text('Sistema de Inspección de Gabinetes de Alumbrado', margin, y+14);
-    doc.setDrawColor(220,224,234);
-    y += 26;
-    doc.setLineWidth(1);
-    doc.line(margin, y, pageW-margin, y);
-    y += 26;
-
-    // ---- Images: Foto externa / Foto interna side by side ----
-    const [extImg, intImg] = await Promise.all([
-      loadImageData(r.fotoExtImgs),
-      loadImageData(r.fotoIntImgs)
-    ]);
-
-    const boxW = (pageW - margin*2 - 16) / 2;
-    const boxH = 190;
-    drawPhotoBox(doc, margin, y, boxW, boxH, extImg, 'Foto externa');
-    drawPhotoBox(doc, margin + boxW + 16, y, boxW, boxH, intImg, 'Foto interna');
-    y += boxH + 28;
+    // ---- Header (logo) ----
+    y = drawPdfHeader(doc, margin, pageW, y);
 
     // ---- Address / Tablero title ----
     doc.setFont('helvetica','bold');
     doc.setFontSize(13);
     doc.setTextColor(18,32,54);
     doc.text(`DIRECCIÓN: ${fullAddress(r).toUpperCase()}`, margin, y);
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(13);
     const tabLabel = `TAB N°: ${r.nombre}`;
     doc.text(tabLabel, pageW - margin - doc.getTextWidth(tabLabel), y);
     y += 14;
@@ -727,7 +709,7 @@ async function generatePdf(dataIndex, btnEl){
     doc.line(margin, y, pageW-margin, y);
     y += 22;
 
-    // ---- Detail fields ----
+    // ---- Detail fields: tabla con bordes ----
     const fields = [
       ['Responsable', r.responsable],
       ['Tipo', r.tipo],
@@ -738,47 +720,43 @@ async function generatePdf(dataIndex, btnEl){
       ['ID', r.id_],
       ['Circuito con PAT', r.circuitoPat],
     ];
-    doc.setFontSize(10.5);
-    fields.forEach(([label, val])=>{
-      doc.setFont('helvetica','bold');
-      doc.setTextColor(70,78,98);
-      doc.text(label + ':', margin, y);
-      doc.setFont('helvetica','normal');
-      doc.setTextColor(24,33,54);
-      doc.text(val ? String(val) : '-', margin + 140, y);
-      y += 18;
-      doc.setDrawColor(240,242,247);
-      doc.line(margin, y-6, pageW-margin, y-6);
-    });
+    y = drawDetailsTable(doc, margin, y, pageW - margin*2, fields);
+    y += 22;
 
-    // Note if any image could not be embedded due to browser cross-origin restrictions
-    const missingNotes = [];
-    if(r.fotoExtImgs && r.fotoExtImgs.length && !extImg) missingNotes.push('foto externa');
-    if(r.fotoIntImgs && r.fotoIntImgs.length && !intImg) missingNotes.push('foto interna');
-    if(missingNotes.length){
-      y += 8;
-      doc.setFontSize(8.5);
-      doc.setTextColor(160,60,50);
-      doc.text(`Nota: no se pudo incrustar la imagen de ${missingNotes.join(' y ')} por restricciones del navegador de origen. Ver enlaces en la aplicación.`, margin, y, {maxWidth: pageW-margin*2});
-    }
+    // ---- Images: Foto externa / Foto interna, apiladas ocupando el resto de la página ----
+    const [extImg, intImg] = await Promise.all([
+      loadImageData(r.fotoExtImgs),
+      loadImageData(r.fotoIntImgs)
+    ]);
+
+    const imgBoxW = pageW - margin*2;
+    const captionH = 16;
+    const gapBetween = 16;
+    const availH = pageH - margin - y;
+    const imgBoxH = Math.max(120, (availH - captionH*2 - gapBetween) / 2);
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(18,32,54);
+    doc.text('Foto externa', margin, y + 11);
+    y += captionH;
+    drawPhotoBox(doc, margin, y, imgBoxW, imgBoxH, extImg, 'Foto externa');
+    y += imgBoxH + gapBetween;
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(18,32,54);
+    doc.text('Foto interna', margin, y + 11);
+    y += captionH;
+    drawPhotoBox(doc, margin, y, imgBoxW, imgBoxH, intImg, 'Foto interna');
+    y += imgBoxH;
 
     // ---- Plano page ----
     if(r.planoImgs && r.planoImgs.length){
       const planoImg = await loadImageData(r.planoImgs);
       doc.addPage();
-      let py = 40;
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(18);
-      doc.setTextColor(18,32,54);
-      doc.text('AUTOTROL', margin, py);
-      doc.setFontSize(9);
-      doc.setFont('helvetica','normal');
-      doc.setTextColor(105,112,134);
-      doc.text('Sistema de Inspección de Gabinetes de Alumbrado', margin, py+14);
-      py += 26;
-      doc.setDrawColor(220,224,234);
-      doc.line(margin, py, pageW-margin, py);
-      py += 26;
+      let py = margin;
+      py = drawPdfHeader(doc, margin, pageW, py);
 
       doc.setFont('helvetica','bold');
       doc.setFontSize(14);
@@ -792,14 +770,8 @@ async function generatePdf(dataIndex, btnEl){
       py += 20;
 
       const planoBoxW = pageW - margin*2;
-      const planoBoxH = 420;
+      const planoBoxH = pageH - margin - py;
       drawPhotoBox(doc, margin, py, planoBoxW, planoBoxH, planoImg, null);
-      if(!planoImg){
-        py += planoBoxH + 14;
-        doc.setFontSize(8.5);
-        doc.setTextColor(160,60,50);
-        doc.text('Nota: no se pudo incrustar el plano por restricciones del navegador de origen. Ver enlace en la aplicación.', margin, py, {maxWidth: planoBoxW});
-      }
     }
 
     doc.save(`Tablero_${r.nombre}.pdf`);
@@ -811,6 +783,56 @@ async function generatePdf(dataIndex, btnEl){
     btnEl.disabled = false;
     btnEl.innerHTML = originalLabel;
   }
+}
+
+const LOGO_ASPECT = 425/142; // ancho/alto del logo Autotrol
+
+function drawPdfHeader(doc, margin, pageW, y){
+  const logoH = 28;
+  const logoW = logoH * LOGO_ASPECT;
+  doc.addImage(LOGO_DATA_URI, 'PNG', margin, y, logoW, logoH);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(105,112,134);
+  doc.text('Sistema de Inspección de Gabinetes de Alumbrado', margin, y + logoH + 12);
+  let newY = y + logoH + 20;
+  doc.setDrawColor(220,224,234);
+  doc.setLineWidth(1);
+  doc.line(margin, newY, pageW - margin, newY);
+  return newY + 22;
+}
+
+function drawDetailsTable(doc, x, y, w, fields){
+  const rowH = 20;
+  const labelColW = 150;
+  const tableH = rowH * fields.length;
+  doc.setDrawColor(222,226,234);
+  doc.setLineWidth(1);
+  // borde exterior
+  doc.rect(x, y, w, tableH);
+  // línea vertical entre columnas
+  doc.line(x + labelColW, y, x + labelColW, y + tableH);
+  doc.setFontSize(10.2);
+  fields.forEach(([label, val], i)=>{
+    const rowY = y + i*rowH;
+    if(i % 2 === 1){
+      doc.setFillColor(247,248,250);
+      doc.rect(x, rowY, w, rowH, 'F');
+      // volver a trazar bordes de la fila porque el relleno los tapa
+      doc.setDrawColor(222,226,234);
+      doc.rect(x, rowY, w, rowH);
+      doc.line(x + labelColW, rowY, x + labelColW, rowY + rowH);
+    } else if(i > 0){
+      doc.line(x, rowY, x + w, rowY);
+    }
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(70,78,98);
+    doc.text(label, x + 10, rowY + rowH/2 + 3.5);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(24,33,54);
+    doc.text(val ? String(val) : '-', x + labelColW + 10, rowY + rowH/2 + 3.5);
+  });
+  return y + tableH;
 }
 
 function drawPhotoBox(doc, x, y, w, h, imgData, label){
